@@ -10,7 +10,7 @@
     tools:context=".CalendarFragment" >
 
     <TextView
-        android:id="@+id/textView1"
+        android:id="@+id/reminderName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/hello_world" />
@@ -19,7 +19,7 @@
         android:id="@+id/button1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignTop="@+id/textView1"
+        android:layout_alignTop="@+id/reminderName"
         android:layout_centerHorizontal="true"
         android:text="Button" />
 

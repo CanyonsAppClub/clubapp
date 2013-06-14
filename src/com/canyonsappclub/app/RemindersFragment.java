@@ -93,7 +93,7 @@ public class RemindersFragment extends ListFragment
 					HashMap<Integer,Object> event = new HashMap<Integer,Object>();
 					event.put(ReminderItemAdapter.PROPERTY_NAME, eventObject.getString("title"));
 					event.put(ReminderItemAdapter.PROPERTY_LOCATION,eventObject.getString("location"));
-					event.put(ReminderItemAdapter.PROPERTY_DATE, eventObject.getString("timeperiod"));
+					event.put(ReminderItemAdapter.PROPERTY_DATE, TimeManager.convertFromIsoFormat(eventObject.getString("timeperiod")));
 					
 					URL url = null;
 					Drawable drawable = null;

@@ -8,6 +8,7 @@
         android:id="@+id/reminderIcon"
         android:layout_width="75dip"
         android:layout_height="75dip"
+        android:layout_gravity="center"
         android:src="@drawable/ic_launcher" />
 
     <LinearLayout
@@ -22,20 +23,24 @@
             android:layout_height="wrap_content"
             android:text="Title"
             android:textAppearance="?android:attr/textAppearanceLarge" />
+        
+        <TextView
+            android:id="@+id/reminderSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Subtitle"
+            android:textColor="#404040"
+            android:textSize="14sp" />
+
+        <!--android:textAppearance="?android:attr/textAppearanceMedium" -->
 
         <TextView
             android:id="@+id/reminderDate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Date"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-
-        <TextView
-            android:id="@+id/reminderLocation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Location"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            android:textColor="#000099"
+            android:textSize="16sp" />
 
     </LinearLayout>
 

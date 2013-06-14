@@ -23,8 +23,8 @@ public class ReminderItemAdapter extends BaseAdapter
 	ArrayList<HashMap<Integer,Object>> data;
 	
 	public final static int PROPERTY_NAME = 0;
-	public final static int PROPERTY_DATE = 1;
-	public final static int PROPERTY_LOCATION = 2;
+	public final static int PROPERTY_SUBTITLE = 1;
+	public final static int PROPERTY_DATE = 2;
 	public final static int PROPERTY_ICON = 3;
 	
 	public ReminderItemAdapter(Context context, int layoutToInflate, ArrayList<HashMap<Integer,Object>> contents)
@@ -63,13 +63,13 @@ public class ReminderItemAdapter extends BaseAdapter
 		HashMap<Integer,Object> item = data.get(position);
 		
 		TextView name = (TextView)view.findViewById(R.id.reminderName);
+		TextView location = (TextView)view.findViewById(R.id.reminderSubtitle);
 		TextView date = (TextView)view.findViewById(R.id.reminderDate);
-		TextView location = (TextView)view.findViewById(R.id.reminderLocation);
 		ImageView icon = (ImageView)view.findViewById(R.id.reminderIcon);
 		
 		name.setText((CharSequence) item.get(PROPERTY_NAME));
+		location.setText((CharSequence) item.get(PROPERTY_SUBTITLE));
 		date.setText((CharSequence) item.get(PROPERTY_DATE));
-		location.setText((CharSequence) item.get(PROPERTY_LOCATION));
 		icon.setImageDrawable((Drawable) item.get(PROPERTY_ICON));
 		
 		return view;

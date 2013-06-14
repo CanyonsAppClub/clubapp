@@ -92,7 +92,7 @@ public class RemindersFragment extends ListFragment
 					JSONObject eventObject = eventsArray.getJSONObject(i);
 					HashMap<Integer,Object> event = new HashMap<Integer,Object>();
 					event.put(ReminderItemAdapter.PROPERTY_NAME, eventObject.getString("title"));
-					event.put(ReminderItemAdapter.PROPERTY_LOCATION,eventObject.getString("location"));
+					event.put(ReminderItemAdapter.PROPERTY_SUBTITLE,eventObject.getString("subtitle"));
 					event.put(ReminderItemAdapter.PROPERTY_DATE, TimeManager.convertFromIsoFormat(eventObject.getString("timeperiod")));
 					
 					URL url = null;

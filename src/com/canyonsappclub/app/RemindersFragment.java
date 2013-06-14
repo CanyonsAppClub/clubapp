@@ -109,7 +109,7 @@ public class RemindersFragment extends ListFragment
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					
+					 
 					event.put(ReminderItemAdapter.PROPERTY_ICON, drawable );
 					reminders.add(event);
 				}

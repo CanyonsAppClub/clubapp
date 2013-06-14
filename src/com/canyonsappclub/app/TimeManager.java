@@ -12,7 +12,20 @@ package com.canyonsappclub.app;
    ************************************************************************************* */
 public class TimeManager {
 	
+	// This will not work for numbers above 100!
+	/*
+	 * More technically, this will not work for 112 which SHOULD be 112th, but WILL
+	 * return a 'nd' rather than 'th'. We're using this for dates, so there are no real
+	 * concerns, just be aware that is this kinda crappy code. Also, dealing with dates
+	 * and the English are never fun outside of good frameworks.
+	 */
+	
 	static String appendExt(int num) {
+		
+		if(num > 9 && num < 21) {
+			return "th";
+		}
+		
 		String str = String.valueOf(num);
 		int parsed = Integer.parseInt(String.valueOf(str.charAt(str.length()-1)));
 		if(parsed == 1) {

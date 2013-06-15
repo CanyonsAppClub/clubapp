@@ -25,7 +25,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
-import android.widget.SimpleAdapter;
 
 public class RemindersFragment extends ListFragment
 {
@@ -33,11 +32,12 @@ public class RemindersFragment extends ListFragment
 	LinearLayout remindersLayout, spinnerLayout;
 	
 	ReminderItemAdapter adapter; 
-	final ArrayList<HashMap<Integer,Object>> reminders = new ArrayList<HashMap<Integer,Object>>();
+	
 	
 	final String requestUrl = "http://cdn.canyonsappclub.com/sample/calendar.json";
 	final HttpClient client = new DefaultHttpClient();
 	
+	private ArrayList<HashMap<Integer,Object>> reminders;
 	
 	final Runnable fetchRemindersRunnable = new Runnable()
 	{
@@ -85,6 +85,9 @@ public class RemindersFragment extends ListFragment
 				JSONObject calendarObject = mainJSONObject.getJSONObject("calendar");
 				imgUrl = calendarObject.getString("imgurl");
 				JSONArray  eventsArray =	calendarObject.getJSONArray("events");
+				
+				
+				
 				reminders.clear();
 				int eventsLength = eventsArray.length();
 				for(int i = 0; i < eventsLength; i++)
@@ -128,8 +131,7 @@ public class RemindersFragment extends ListFragment
 				@Override
 				public void run() 
 				{
-					remindersLayout.setVisibility(LinearLayout.VISIBLE);
-					spinnerLayout.setVisibility(LinearLayout.GONE);
+					switchFromSpinner();
 				}
 			});
 			
@@ -145,15 +147,31 @@ public class RemindersFragment extends ListFragment
 
 		remindersLayout = (LinearLayout) view.findViewById(R.id.remindersLayout);
 		spinnerLayout = (LinearLayout) view.findViewById(R.id.spinnerLayout);
+		 
+		ClubApplication app = (ClubApplication)inflater.getContext().getApplicationContext();
+		this.reminders = app.reminders;
+		
+		if(app.remindersNeedRefresh)
+		{
+			Thread reminderFetchThread = new Thread(fetchRemindersRunnable);
+			reminderFetchThread.start();
+			app.remindersNeedRefresh = false;
+		}
+		else
+		{
+			switchFromSpinner();
+		}
 		
 		adapter = new ReminderItemAdapter(inflater.getContext(), R.layout.item_reminder, reminders);
-		
 		setListAdapter(adapter);
-		
-		Thread reminderFetchThread = new Thread(fetchRemindersRunnable);
-		reminderFetchThread.start();
 		
         return view;
     }
+	
+	private void switchFromSpinner()
+	{
+		remindersLayout.setVisibility(LinearLayout.VISIBLE);
+		spinnerLayout.setVisibility(LinearLayout.GONE);
+	}
 
 }

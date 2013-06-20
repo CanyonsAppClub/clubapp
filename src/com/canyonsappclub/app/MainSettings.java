@@ -1,5 +1,7 @@
 package com.canyonsappclub.app;
 
+import java.util.List;
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -15,11 +17,9 @@ import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
+import android.support.v4.app.NavUtils;
 import android.text.TextUtils;
 import android.view.MenuItem;
-import android.support.v4.app.NavUtils;
-
-import java.util.List;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -42,7 +42,8 @@ public class MainSettings extends PreferenceActivity {
 	private static final boolean ALWAYS_SIMPLE_PREFS = false;
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(Bundle savedInstanceState)
+	{
 		super.onCreate(savedInstanceState);
 		setupActionBar();
 	}

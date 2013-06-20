@@ -24,12 +24,21 @@ import android.support.v4.app.ListFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
+import android.view.ViewTreeObserver;
+import android.view.ViewTreeObserver.OnGlobalLayoutListener;
+import android.view.animation.TranslateAnimation;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 
 public class RemindersFragment extends ListFragment
 {
 	
-	LinearLayout remindersLayout, spinnerLayout;
+	//LinearLayout remindersLayout, spinnerLayout; 
+	LinearLayout spinnerLayout;
+	ListView remindersList;
+	
+	int spinnerLayoutHeight = 0;
 	
 	ReminderItemAdapter adapter; 
 	
@@ -124,9 +133,9 @@ public class RemindersFragment extends ListFragment
 				e.printStackTrace();
 			}
 			
-			adapter.notifyDataSetChanged();
+			//adapter.notifyDataSetChanged();
 			
-			remindersLayout.post(new Runnable()
+			spinnerLayout.post(new Runnable()
 			{
 				@Override
 				public void run() 
@@ -145,9 +154,23 @@ public class RemindersFragment extends ListFragment
 	{
 		View view = inflater.inflate(R.layout.fragment_reminders, container, false);
 
-		remindersLayout = (LinearLayout) view.findViewById(R.id.remindersLayout);
+		//remindersLayout = (LinearLayout) view.findViewById(R.id.remindersLayout);
 		spinnerLayout = (LinearLayout) view.findViewById(R.id.spinnerLayout);
-		 
+
+		remindersList = (ListView)view.findViewById(android.R.id.list);
+		
+		ViewTreeObserver observer = spinnerLayout.getViewTreeObserver();
+		observer.addOnGlobalLayoutListener(new OnGlobalLayoutListener()
+		{
+			@Override
+			public void onGlobalLayout() 
+			{
+				spinnerLayoutHeight = spinnerLayout.getHeight();				
+				spinnerLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+			}	
+		});
+		
+		
 		ClubApplication app = (ClubApplication)inflater.getContext().getApplicationContext();
 		this.reminders = app.reminders;
 		
@@ -168,10 +191,59 @@ public class RemindersFragment extends ListFragment
         return view;
     }
 	
+	//Should be called in UI thread
 	private void switchFromSpinner()
-	{
-		remindersLayout.setVisibility(LinearLayout.VISIBLE);
-		spinnerLayout.setVisibility(LinearLayout.GONE);
+	{	
+		ReminderItemAdapter adapter = (ReminderItemAdapter) remindersList.getAdapter();
+		if(adapter != null)
+		{ adapter.notifyDataSetChanged(); }
+		
+		ViewTreeObserver observer = remindersList.getViewTreeObserver();
+		observer.addOnGlobalLayoutListener(new OnGlobalLayoutListener()
+		{
+
+			@Override
+			public void onGlobalLayout() 
+			{
+				remindersList.post(new Runnable(){
+
+					@Override
+					public void run() {
+						
+						LayoutParams params = remindersList.getLayoutParams();
+						params.height = spinnerLayoutHeight + remindersList.getHeight();
+						remindersList.setLayoutParams(params);
+						
+						final TranslateAnimation animation = new TranslateAnimation(0,0,0,-spinnerLayoutHeight);
+						animation.setDuration(500);
+						animation.setFillEnabled(true);
+						animation.setFillAfter(true);
+						remindersList.setAnimation(animation);
+						spinnerLayout.setAnimation(animation);
+						spinnerLayout.postDelayed(new Runnable()
+						{
+							@Override
+							public void run() 
+							{
+								spinnerLayout.clearAnimation();
+								remindersList.clearAnimation();
+								spinnerLayout.setVisibility(View.GONE);
+							}
+						}, 500);
+						
+					}
+					
+				});
+				
+				remindersList.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+			}
+			
+		});
+		
+		
+		
+		
+		
 	}
 
 }

@@ -1,11 +1,13 @@
 package com.canyonsappclub.app;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
@@ -18,6 +20,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
@@ -42,49 +45,127 @@ public class RemindersFragment extends ListFragment
 	
 	ReminderItemAdapter adapter; 
 	
-	
+	final static String baseUrl = "http://cdn.canyonsappclub.com/";
 	final String requestUrl = "http://cdn.canyonsappclub.com/sample/calendar.json";
 	final HttpClient client = new DefaultHttpClient();
 	
-	private ArrayList<HashMap<Integer,Object>> reminders;
+	//private ArrayList<HashMap<Integer,Object>> reminders;
+	//private HashMap<Integer,String> iconPaths;
+	//private HashMap<String,Drawable> locationIcons;
+	private ClubApplication app;
+
+	//We need acess to our context within our functions and threads.
+	private Context ourContext;
+	
+	HttpResponse ExecuteRequest(String requestUrl)
+	{
+		HttpGet request = new HttpGet(requestUrl);
+		HttpResponse response;
+		try 
+		{
+			response = client.execute(request);
+		}
+		catch (ClientProtocolException e)
+		{
+			//TODO
+			e.printStackTrace();
+			return null;
+		} 
+		catch (IOException e)
+		{
+			// TODO
+			e.printStackTrace();
+			return null;
+		}
+		return response;
+	}
+	
+	String DoRequest(String requestUrl)
+	{
+		HttpResponse response = ExecuteRequest(requestUrl);
+		String responseString;
+		try {
+			responseString = EntityUtils.toString(response.getEntity());
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+		return responseString;
+	}
+	
+	
+	
 	
 	final Runnable fetchRemindersRunnable = new Runnable()
 	{
 		@Override
 		public void run() 
 		{
-			HttpGet request = new HttpGet(requestUrl);
-			HttpResponse response;
-			try 
+			final String[] requests = new String[]{baseUrl+"app/events/",baseUrl+"app/loc_icon_ref/"};
+			final String[] responses = new String[requests.length];
+			final CountDownLatch latch = new CountDownLatch(requests.length);
+			for(final int i = 0; i < requests.length; i++)
 			{
-				response = client.execute(request);
+				new Thread(new Runnable()
+				{
+					@Override
+					public void run()
+					{
+						responses[i] = DoRequest(requests[i]);
+						latch.countDown();
+					}
+				}).start();
 			}
-			catch (ClientProtocolException e)
+			latch.wait();
+			
+			
+			//Parse the location icon refrenses.
+			String iconAbsoluteUrl;
+			
+			JSONObject mainJSONObject = new JSONObject(responses[1]);
+			JSONObject iconRefrenceObject = mainJSONObject.getJSONObject("icon-refrence");
+			iconAbsoluteUrl = iconRefrenceObject.getString("absolute_url");
+			JSONArray locations = iconRefrenceObject.getJSONArray("locations");
+			int locationsLength = locations.length();
+			
+			for(int i = 0; i < locationsLength; i++)
 			{
-				//TODO
-				e.printStackTrace();
-				return;
-			} 
-			catch (IOException e)
-			{
-				// TODO
-				e.printStackTrace();
-				return;
+				JSONObject location = locations.getJSONObject(i);
+				int id = location.getInt("id");
+				String path = location.getString("location_icon");
+				
+				//Download and save icon.
+				String response = DoRequest( baseUrl + iconAbsoluteUrl + path);
+				bytep[] data = response.getBytes("UTF8");
+				HttpResponse iconResponse = ExecuteRequest(baseUrl + iconAbsoluteUrl + path);
+				S;
+				
+						
+				URL url = new URL(baseUrl + iconAbsoluteUrl + path);
+				InputStream content;
+				content = (InputStream)url.getContent();
+				
+				content.
+				
+				//Save to cache
+				File ourFile = new File(ourContext.getCacheDir(), path);
+				FileOutputStream outStream = new FileOutputStream(ourFile);
+				
+				
+				
+				Drawable.
+				
+				drawable = Drawable.createFromStream(content, ":)");
+					
+				iconPaths.put(id, path);
 			}
 			
-			String responseString;
 			
-			try {
-				responseString = EntityUtils.toString(response.getEntity());
-			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return;
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return;
-			}
 			
 			String imgUrl;
 			
@@ -94,7 +175,6 @@ public class RemindersFragment extends ListFragment
 				JSONObject calendarObject = mainJSONObject.getJSONObject("calendar");
 				imgUrl = calendarObject.getString("imgurl");
 				JSONArray  eventsArray =	calendarObject.getJSONArray("events");
-				
 				
 				
 				reminders.clear();
@@ -170,9 +250,8 @@ public class RemindersFragment extends ListFragment
 			}	
 		});
 		
-		
-		ClubApplication app = (ClubApplication)inflater.getContext().getApplicationContext();
-		this.reminders = app.reminders;
+		//We'll need this later.
+		app = (ClubApplication)inflater.getContext().getApplicationContext();
 		
 		if(app.remindersNeedRefresh)
 		{
@@ -185,7 +264,7 @@ public class RemindersFragment extends ListFragment
 			switchFromSpinner();
 		}
 		
-		adapter = new ReminderItemAdapter(inflater.getContext(), R.layout.item_reminder, reminders);
+		adapter = new ReminderItemAdapter(inflater.getContext(), R.layout.item_reminder, app.reminders);
 		setListAdapter(adapter);
 		
         return view;

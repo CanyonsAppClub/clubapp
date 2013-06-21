@@ -43,7 +43,7 @@ public class RemindersFragment extends ListFragment
 	ReminderItemAdapter adapter; 
 	
 	
-	final String requestUrl = "http://cdn.canyonsappclub.com/sample/calendar.json";
+	//final String requestUrl = "http://cdn.canyonsappclub.com/sample/calendar.json";
 	final HttpClient client = new DefaultHttpClient();
 	
 	private ArrayList<HashMap<Integer,Object>> reminders;

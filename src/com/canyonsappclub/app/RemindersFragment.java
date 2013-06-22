@@ -26,6 +26,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -224,9 +225,9 @@ public class RemindersFragment extends ListFragment
 					{
 						JSONObject eventObject = eventsArray.getJSONObject(i);
 						HashMap<Integer,Object> event = new HashMap<Integer,Object>();
-						event.put(ReminderItemAdapter.PROPERTY_NAME, eventObject.getString("title"));
-						event.put(ReminderItemAdapter.PROPERTY_SUBTITLE,eventObject.getString("subtitle"));
-						event.put(ReminderItemAdapter.PROPERTY_DATE, eventObject.getString("time_period"));
+						event.put(ReminderItemAdapter.PROPERTY_NAME, Html.fromHtml(eventObject.getString("title")).toString());
+						event.put(ReminderItemAdapter.PROPERTY_SUBTITLE, Html.fromHtml(eventObject.getString("subtitle")).toString());
+						event.put(ReminderItemAdapter.PROPERTY_DATE, Html.fromHtml(eventObject.getString("time_period")).toString());
 						int iconId = eventObject.getInt("location_id");
 						event.put(ReminderItemAdapter.PROPERTY_ICON, app.icons.get(app.iconPaths.get(iconId))); 
 						app.reminders.add(event);

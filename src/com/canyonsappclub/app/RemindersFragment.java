@@ -1,5 +1,6 @@
 package com.canyonsappclub.app;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -20,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -86,14 +88,9 @@ public class RemindersFragment extends ListFragment
 	
 	ReminderItemAdapter adapter; 
 	
-	final static String baseUrl = "http://cdn.canyonsappclub.com/";
-	//final String requestUrl = "http://cdn.canyonsappclub.com/sample/calendar.json";
-	//final HttpClient client = new DefaultHttpClient();
+	final static String baseUrl = "http://csd.sianware.com/";
 
 	private ClubApplication app;
-
-	//We need acess to our context within our functions and threads.
-	//private Context ourContext;
 	
 	static HttpResponse ExecuteRequest(String requestUrl, Status status)
 	{
@@ -185,44 +182,19 @@ public class RemindersFragment extends ListFragment
 						int id = location.getInt("id");
 						String path = location.getString("location_icon");
 
-						//Download icon
-						//Status status = new Status();
-						//String response = DoRequest( baseUrl + iconAbsoluteUrl + path, status);
-						//Is this wasting time converting from string or is it all good?
-						//byte[] data = response.get
+						//Download icon and put it in a drawable
 						URL  imageUrl = new URL(baseUrl + iconAbsoluteUrl + path);
 						InputStream imageStream = (InputStream)imageUrl.getContent();
 						Drawable imageDrawable = Drawable.createFromStream(imageStream, ":)");
-						try
-						{
-							File ourFile = new File(app.getCacheDir(), path.split("/")[1]);
-							FileOutputStream outStream = new FileOutputStream(ourFile);
-							byte buffer[] = new byte[1024];
-							int position;
-							
-									
-									imageStream.read(buffer, position, 1024 - position))
-							{
-								if(position == 1024)
-								{
-									
-								}
-							}
-							
-							byte buffer[] = new byte[1024];
-							int position = 0;
-							while( length = Drawable)
-							
-							outStream.close();
-							
-						} catch(IOException e){ e.printStackTrace(); }
+						//Save image to cache
+						Bitmap bitmap = ((BitmapDrawable)(imageDrawable)).getBitmap();
+						File ourFile = new File(app.getCacheDir()+"/loc_img/"+path);
+						ourFile.getParentFile().mkdirs(); //Make our directories if they don't exist.
+						FileOutputStream outStream = new FileOutputStream(ourFile);
+						bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
+						outStream.close();
 						
-						//Save to cache
-						
-						
-						//Make our Drawable
-
-						app.icons.put(path, bitmap);
+						app.icons.put(path, imageDrawable);
 						app.iconPaths.put(id, path);
 					}
 				} catch(JSONException e)
@@ -244,9 +216,7 @@ public class RemindersFragment extends ListFragment
 				{
 					JSONObject eventsJSONObject = new JSONObject(responses[0].string);
 					JSONObject calendarObject = eventsJSONObject.getJSONObject("calendar");
-					//imgUrl = calendarObject.getString("imgurl");
 					JSONArray  eventsArray =	calendarObject.getJSONArray("events");
-
 
 					app.reminders.clear();
 					int eventsLength = eventsArray.length();
@@ -257,7 +227,8 @@ public class RemindersFragment extends ListFragment
 						event.put(ReminderItemAdapter.PROPERTY_NAME, eventObject.getString("title"));
 						event.put(ReminderItemAdapter.PROPERTY_SUBTITLE,eventObject.getString("subtitle"));
 						event.put(ReminderItemAdapter.PROPERTY_DATE, eventObject.getString("time_period"));
-						event.put(ReminderItemAdapter.PROPERTY_ICON, app.icons.get(eventObject.getInt("location_id"))); 
+						int iconId = eventObject.getInt("location_id");
+						event.put(ReminderItemAdapter.PROPERTY_ICON, app.icons.get(app.iconPaths.get(iconId))); 
 						app.reminders.add(event);
 					}
 

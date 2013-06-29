@@ -29,6 +29,9 @@ import android.support.v4.app.ListFragment;
 import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
@@ -92,6 +95,8 @@ public class RemindersFragment extends ListFragment
 	final static String baseUrl = "http://appclub-test.sianware.com/";
 
 	private ClubApplication app;
+	
+	boolean spinnerStatus = true; //If the spinner is on or off screen
 	
 	static HttpResponse ExecuteRequest(String requestUrl, Status status)
 	{
@@ -179,7 +184,7 @@ public class RemindersFragment extends ListFragment
 					@Override
 					public void run() 
 					{
-						switchFromSpinner();
+						SetSpinner(false);
 					}
 				});
 			}
@@ -194,9 +199,10 @@ public class RemindersFragment extends ListFragment
 	{
 		View view = inflater.inflate(R.layout.fragment_reminders, container, false);
 
+		setHasOptionsMenu(true);
+		
 		//remindersLayout = (LinearLayout) view.findViewById(R.id.remindersLayout);
 		spinnerLayout = (LinearLayout) view.findViewById(R.id.spinnerLayout);
-
 		remindersList = (ListView)view.findViewById(android.R.id.list);
 		
 		ViewTreeObserver observer = spinnerLayout.getViewTreeObserver();
@@ -215,17 +221,7 @@ public class RemindersFragment extends ListFragment
 		
 		//First, let's put stuff we have from cache in our list, if we have such stuff
 		LoadFromCache();
-		
-		if(app.remindersNeedRefresh)
-		{
-			Thread reminderFetchThread = new Thread(fetchRemindersRunnable);
-			reminderFetchThread.start();
-			app.remindersNeedRefresh = false;
-		}
-		else
-		{
-			switchFromSpinner();
-		}
+		ReloadReminders();
 		
 		adapter = new ReminderItemAdapter(inflater.getContext(), R.layout.item_reminder, app.reminders);
 		setListAdapter(adapter);
@@ -233,45 +229,74 @@ public class RemindersFragment extends ListFragment
         return view;
     }
 	
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater)
+	{
+		MenuItem reloadItem = menu.add(0,0,0,"Reload")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  /*haha*/  ;
+        reloadItem.setIcon(android.R.drawable.stat_notify_sync);
+        reloadItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);	
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item)
+	{
+		switch(item.getItemId())
+		{
+		case 0:
+			ReloadReminders();
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
+	}
+	
 	//Should be called in UI thread
-	private void switchFromSpinner()
+	private void SetSpinner(boolean status)
 	{	
+		if(status == spinnerStatus){ return; }
+		spinnerStatus = status;
+		
 		ReminderItemAdapter adapter = (ReminderItemAdapter) remindersList.getAdapter();
-		if(adapter != null)
+		
+		//TODO: notify data set changed elsewhere. We don't always want to do this in this method 
+		if(adapter != null && status == false)
 		{ adapter.notifyDataSetChanged(); }
+		
+		final int direction = status?1:-1; //1 if true, -1 if false
 		
 		ViewTreeObserver observer = remindersList.getViewTreeObserver();
 		observer.addOnGlobalLayoutListener(new OnGlobalLayoutListener()
 		{
-
 			@Override
 			public void onGlobalLayout() 
 			{
-				remindersList.post(new Runnable(){
-
+				remindersList.post(new Runnable()
+				{
 					@Override
-					public void run() {
-						
+					public void run() 
+					{	
 						LayoutParams params = remindersList.getLayoutParams();
-						params.height = spinnerLayoutHeight + remindersList.getHeight();
+						params.height = remindersList.getHeight() + (spinnerLayoutHeight * -direction);
 						remindersList.setLayoutParams(params);
 						
-						final TranslateAnimation animation = new TranslateAnimation(0,0,0,-spinnerLayoutHeight);
+						if(direction == 1) { spinnerLayout.setVisibility(View.VISIBLE); }
+						
+						final TranslateAnimation animation = new TranslateAnimation(0,0,0,spinnerLayoutHeight * direction);
 						animation.setDuration(500);
 						animation.setFillEnabled(true);
 						animation.setFillAfter(true);
 						remindersList.setAnimation(animation);
 						spinnerLayout.setAnimation(animation);
-						spinnerLayout.postDelayed(new Runnable()
+						spinnerLayout.postDelayed(new Runnable() //We are only posting this because we want a delay
 						{
 							@Override
 							public void run() 
 							{
 								spinnerLayout.clearAnimation();
 								remindersList.clearAnimation();
-								spinnerLayout.setVisibility(View.GONE);
+								if(direction == -1) { spinnerLayout.setVisibility(View.GONE); }
 							}
-						}, 500);	
+						}, 500);
 					}
 					
 				});
@@ -291,6 +316,8 @@ public class RemindersFragment extends ListFragment
 			public void run() {
 				String locationIconJson = GetStringFromFile(app.getCacheDir()+"/locationIconCache.json");
 				String remindersJson = GetStringFromFile(app.getCacheDir()+"/remindersCache.json");
+				if(locationIconJson == null || remindersJson == null){ return; }
+				
 				ProcessLocationIconJson(locationIconJson);
 				ProcessRemindersJson(remindersJson);
 			}
@@ -303,7 +330,6 @@ public class RemindersFragment extends ListFragment
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 	}
 
 	private String GetStringFromFile(String filename)
@@ -419,5 +445,13 @@ public class RemindersFragment extends ListFragment
 		//Save reminders json file in cache
 		SaveStringToFile(app.getCacheDir()+"/remindersCache.json", json);
 	
+	}
+	
+	private void ReloadReminders()
+	{
+		SetSpinner(true);
+		Thread reminderFetchThread = new Thread(fetchRemindersRunnable);
+		reminderFetchThread.start();
+		app.remindersNeedRefresh = false;
 	}
 }

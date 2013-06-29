@@ -7,6 +7,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -61,16 +62,14 @@ public class MainActivity extends FragmentActivity
 		viewPager.setOnPageChangeListener(pageChangeListener);
 		
 	}
+	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
     {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
-
-        MenuItem reloadItem = menu.add(0,0,0,"Reload")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  /*haha*/  ;
-        reloadItem.setIcon(android.R.drawable.stat_notify_sync);
-        reloadItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-
 		return true;
 	}
+	
+	
 }

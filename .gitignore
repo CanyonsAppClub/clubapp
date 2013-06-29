@@ -23,4 +23,5 @@ obj/
 .idea/
 clubapp.iml
 
-
+#OS X Treats
+.DS_Store

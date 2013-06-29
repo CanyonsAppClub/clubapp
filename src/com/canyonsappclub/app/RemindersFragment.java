@@ -89,7 +89,7 @@ public class RemindersFragment extends ListFragment
 	
 	ReminderItemAdapter adapter; 
 	
-	final static String baseUrl = "http://csd.sianware.com/";
+	final static String baseUrl = "http://appclub-test.sianware.com/";
 
 	private ClubApplication app;
 	
@@ -145,7 +145,7 @@ public class RemindersFragment extends ListFragment
 		@Override
 		public void run() 
 		{
-			final String[] requests = new String[]{baseUrl+"app/events/",baseUrl+"app/loc_icon_ref/"};
+			final String[] requests = new String[]{baseUrl+"app/json/events/",baseUrl+"app/loc_icon_ref/"};
 			final StringContainer[] responses = new StringContainer[requests.length];
 			final Status[] statuses = new Status[requests.length];
 			

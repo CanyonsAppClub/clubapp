@@ -97,6 +97,7 @@ public class RemindersFragment extends ListFragment
 	private ClubApplication app;
 	
 	boolean spinnerStatus = true; //If the spinner is on or off screen
+	boolean isReloading = false;
 	
 	static HttpResponse ExecuteRequest(String requestUrl, Status status)
 	{
@@ -184,10 +185,13 @@ public class RemindersFragment extends ListFragment
 					@Override
 					public void run() 
 					{
+						adapter.notifyDataSetChanged();
 						SetSpinner(false);
 					}
 				});
 			}
+			
+			isReloading = false;
 			
 		}
 	};
@@ -256,55 +260,39 @@ public class RemindersFragment extends ListFragment
 		if(status == spinnerStatus){ return; }
 		spinnerStatus = status;
 		
-		ReminderItemAdapter adapter = (ReminderItemAdapter) remindersList.getAdapter();
-		
-		//TODO: notify data set changed elsewhere. We don't always want to do this in this method 
-		if(adapter != null && status == false)
-		{ adapter.notifyDataSetChanged(); }
-		
 		final int direction = status?1:-1; //1 if true, -1 if false
 		
-		ViewTreeObserver observer = remindersList.getViewTreeObserver();
-		observer.addOnGlobalLayoutListener(new OnGlobalLayoutListener()
+		if(direction == 1) { spinnerLayout.setVisibility(View.VISIBLE); }
+		else
+		{
+			LayoutParams params = remindersList.getLayoutParams();
+			params.height = remindersList.getHeight() + (spinnerLayoutHeight);
+			remindersList.setLayoutParams(params);
+		}
+		
+		float yDelta = status?-spinnerLayoutHeight:0;
+		final TranslateAnimation animation = new TranslateAnimation(0,0,yDelta,spinnerLayoutHeight * direction + yDelta);
+		animation.setDuration(500);
+		animation.setFillEnabled(true);
+		animation.setFillAfter(true);
+		remindersList.setAnimation(animation);
+		spinnerLayout.setAnimation(animation);
+		spinnerLayout.postDelayed(new Runnable() //We are only posting this because we want a delay
 		{
 			@Override
-			public void onGlobalLayout() 
+			public void run() 
 			{
-				remindersList.post(new Runnable()
+				spinnerLayout.clearAnimation();
+				remindersList.clearAnimation();
+				if(direction == -1) { spinnerLayout.setVisibility(View.GONE); }
+				else
 				{
-					@Override
-					public void run() 
-					{	
-						LayoutParams params = remindersList.getLayoutParams();
-						params.height = remindersList.getHeight() + (spinnerLayoutHeight * -direction);
-						remindersList.setLayoutParams(params);
-						
-						if(direction == 1) { spinnerLayout.setVisibility(View.VISIBLE); }
-						
-						final TranslateAnimation animation = new TranslateAnimation(0,0,0,spinnerLayoutHeight * direction);
-						animation.setDuration(500);
-						animation.setFillEnabled(true);
-						animation.setFillAfter(true);
-						remindersList.setAnimation(animation);
-						spinnerLayout.setAnimation(animation);
-						spinnerLayout.postDelayed(new Runnable() //We are only posting this because we want a delay
-						{
-							@Override
-							public void run() 
-							{
-								spinnerLayout.clearAnimation();
-								remindersList.clearAnimation();
-								if(direction == -1) { spinnerLayout.setVisibility(View.GONE); }
-							}
-						}, 500);
-					}
-					
-				});
-				
-				remindersList.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+					LayoutParams params = remindersList.getLayoutParams();
+					params.height = remindersList.getHeight() - (spinnerLayoutHeight);
+					remindersList.setLayoutParams(params);
+				}
 			}
-			
-		});		
+		}, 500);
 	}
 	
 	private void LoadFromCache()
@@ -368,6 +356,8 @@ public class RemindersFragment extends ListFragment
 	private void ProcessLocationIconJson(String json)
 	{
 		//Parse the location icon references.
+		app.icons.clear();
+		app.iconPaths.clear();
 		try
 		{
 			JSONArray mainJSONArray = new JSONArray(json);
@@ -416,6 +406,7 @@ public class RemindersFragment extends ListFragment
 	private void ProcessRemindersJson(String json)
 	{
 		//Now parse our events
+		app.reminders.clear();
 		try 
 		{
 			JSONArray mainJSONArray = new JSONArray(json);
@@ -449,6 +440,8 @@ public class RemindersFragment extends ListFragment
 	
 	private void ReloadReminders()
 	{
+		if(isReloading == true){ return; }
+		isReloading = true;
 		SetSpinner(true);
 		Thread reminderFetchThread = new Thread(fetchRemindersRunnable);
 		reminderFetchThread.start();

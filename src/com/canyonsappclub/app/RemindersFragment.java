@@ -145,7 +145,7 @@ public class RemindersFragment extends ListFragment
 		@Override
 		public void run() 
 		{
-			final String[] requests = new String[]{baseUrl+"app/json/events/",baseUrl+"app/loc_icon_ref/"};
+			final String[] requests = new String[]{baseUrl+"app/json/events/",baseUrl+"app/json/locations/"};
 			final StringContainer[] responses = new StringContainer[requests.length];
 			final Status[] statuses = new Status[requests.length];
 			
@@ -344,21 +344,18 @@ public class RemindersFragment extends ListFragment
 		//Parse the location icon references.
 		try
 		{
-			String iconAbsoluteUrl;
-			JSONObject mainJSONObject = new JSONObject(json);
-			JSONObject iconRefrenceObject = mainJSONObject.getJSONObject("icon-reference");
-			iconAbsoluteUrl = iconRefrenceObject.getString("absolute_url");
-			JSONArray locations = iconRefrenceObject.getJSONArray("locations");
-			int locationsLength = locations.length();
-
-			for(int i = 0; i < locationsLength; i++)
+			JSONArray mainJSONArray = new JSONArray(json);
+			int mainArrayLength = mainJSONArray.length();
+			for(int i = 0; i < mainArrayLength; i++)
 			{
-				JSONObject location = locations.getJSONObject(i);
-				int id = location.getInt("id");
-				String path = location.getString("location_icon");
-
+				JSONObject object = mainJSONArray.getJSONObject(i);
+				int id = object.getInt("pk");
+				
+				JSONObject fields = object.getJSONObject("fields");
+				String path = fields.getString("icon_file");
+				
 				//Download icon and put it in a drawable
-				URL  imageUrl = new URL(baseUrl + iconAbsoluteUrl + path);
+				URL  imageUrl = new URL(baseUrl + "media/" + path);
 				InputStream imageStream = (InputStream)imageUrl.getContent();
 				Drawable imageDrawable = Drawable.createFromStream(imageStream, ":)");
 				imageStream.close();
@@ -372,7 +369,9 @@ public class RemindersFragment extends ListFragment
 				
 				app.icons.put(path, imageDrawable);
 				app.iconPaths.put(id, path);
+				
 			}
+
 		} catch(JSONException e)
 		{
 			e.printStackTrace();
@@ -393,22 +392,21 @@ public class RemindersFragment extends ListFragment
 		//Now parse our events
 		try 
 		{
-			JSONObject eventsJSONObject = new JSONObject(json);
-			JSONObject calendarObject = eventsJSONObject.getJSONObject("calendar");
-			JSONArray  eventsArray =	calendarObject.getJSONArray("events");
-
-			app.reminders.clear();
-			int eventsLength = eventsArray.length();
-			for(int i = 0; i < eventsLength; i++)
+			JSONArray mainJSONArray = new JSONArray(json);
+			int mainArrayLength = mainJSONArray.length();
+			for(int i = 0; i < mainArrayLength; i++)
 			{
-				JSONObject eventObject = eventsArray.getJSONObject(i);
+				JSONObject object = mainJSONArray.getJSONObject(i);
+				JSONObject fields = object.getJSONObject("fields");
+				
 				HashMap<Integer,Object> event = new HashMap<Integer,Object>();
-				event.put(ReminderItemAdapter.PROPERTY_NAME, Html.fromHtml(eventObject.getString("title")).toString());
-				event.put(ReminderItemAdapter.PROPERTY_SUBTITLE, Html.fromHtml(eventObject.getString("subtitle")).toString());
-				event.put(ReminderItemAdapter.PROPERTY_DATE, Html.fromHtml(eventObject.getString("time_period")).toString());
-				int iconId = eventObject.getInt("location_id");
+				event.put(ReminderItemAdapter.PROPERTY_NAME, Html.fromHtml(fields.getString("event_title")).toString());
+				event.put(ReminderItemAdapter.PROPERTY_SUBTITLE, Html.fromHtml(fields.getString("event_subtitle")).toString());
+				event.put(ReminderItemAdapter.PROPERTY_DATE, Html.fromHtml(fields.getString("start_date")).toString());
+				int iconId = fields.getInt("location");
 				event.put(ReminderItemAdapter.PROPERTY_ICON, app.icons.get(app.iconPaths.get(iconId))); 
 				app.reminders.add(event);
+				
 			}
 
 		}

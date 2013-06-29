@@ -1,7 +1,7 @@
 package com.canyonsappclub.app;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -167,93 +167,22 @@ public class RemindersFragment extends ListFragment
 			
 			if(statuses[1].status == 0 && responses[1].string != null)
 			{
-				//Parse the location icon refrenses.
-				try
-				{
-					String iconAbsoluteUrl;
-					JSONObject mainJSONObject = new JSONObject(responses[1].string);
-					JSONObject iconRefrenceObject = mainJSONObject.getJSONObject("icon-reference");
-					iconAbsoluteUrl = iconRefrenceObject.getString("absolute_url");
-					JSONArray locations = iconRefrenceObject.getJSONArray("locations");
-					int locationsLength = locations.length();
-
-					for(int i = 0; i < locationsLength; i++)
-					{
-						JSONObject location = locations.getJSONObject(i);
-						int id = location.getInt("id");
-						String path = location.getString("location_icon");
-
-						//Download icon and put it in a drawable
-						URL  imageUrl = new URL(baseUrl + iconAbsoluteUrl + path);
-						InputStream imageStream = (InputStream)imageUrl.getContent();
-						Drawable imageDrawable = Drawable.createFromStream(imageStream, ":)");
-						//Save image to cache
-						Bitmap bitmap = ((BitmapDrawable)(imageDrawable)).getBitmap();
-						File ourFile = new File(app.getCacheDir()+"/loc_img/"+path);
-						ourFile.getParentFile().mkdirs(); //Make our directories if they don't exist.
-						FileOutputStream outStream = new FileOutputStream(ourFile);
-						bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
-						outStream.close();
-						
-						app.icons.put(path, imageDrawable);
-						app.iconPaths.put(id, path);
-					}
-				} catch(JSONException e)
-				{
-					e.printStackTrace();
-				} catch(FileNotFoundException e)
-				{
-					e.printStackTrace();
-				} catch(IOException e)
-				{
-					e.printStackTrace();
-				}
+				ProcessLocationIconJson(responses[1].string);
 			}
 			
 			if(statuses[0].status == 0 && responses[0].string != null)
 			{
-				//Now parse our events
-				try 
+				ProcessRemindersJson(responses[0].string);
+				
+				spinnerLayout.post(new Runnable()
 				{
-					JSONObject eventsJSONObject = new JSONObject(responses[0].string);
-					JSONObject calendarObject = eventsJSONObject.getJSONObject("calendar");
-					JSONArray  eventsArray =	calendarObject.getJSONArray("events");
-
-					app.reminders.clear();
-					int eventsLength = eventsArray.length();
-					for(int i = 0; i < eventsLength; i++)
+					@Override
+					public void run() 
 					{
-						JSONObject eventObject = eventsArray.getJSONObject(i);
-						HashMap<Integer,Object> event = new HashMap<Integer,Object>();
-						event.put(ReminderItemAdapter.PROPERTY_NAME, Html.fromHtml(eventObject.getString("title")).toString());
-						event.put(ReminderItemAdapter.PROPERTY_SUBTITLE, Html.fromHtml(eventObject.getString("subtitle")).toString());
-						event.put(ReminderItemAdapter.PROPERTY_DATE, Html.fromHtml(eventObject.getString("time_period")).toString());
-						int iconId = eventObject.getInt("location_id");
-						event.put(ReminderItemAdapter.PROPERTY_ICON, app.icons.get(app.iconPaths.get(iconId))); 
-						app.reminders.add(event);
+						switchFromSpinner();
 					}
-
-				}
-				//			catch (JSONException e) 
-				//			{
-				//				// TODO Auto-generated catch block
-				//				e.printStackTrace();
-				//			}
-				catch (Exception e)
-				{
-					//TODO: Return parse error
-					e.printStackTrace();
-				}
+				});
 			}
-			
-			spinnerLayout.post(new Runnable()
-			{
-				@Override
-				public void run() 
-				{
-					switchFromSpinner();
-				}
-			});
 			
 		}
 	};
@@ -283,7 +212,9 @@ public class RemindersFragment extends ListFragment
 		
 		//We'll need this later.
 		app = (ClubApplication)inflater.getContext().getApplicationContext();
-		//ourContext = inflater.getContext();
+		
+		//First, let's put stuff we have from cache in our list, if we have such stuff
+		LoadFromCache();
 		
 		if(app.remindersNeedRefresh)
 		{
@@ -340,8 +271,7 @@ public class RemindersFragment extends ListFragment
 								remindersList.clearAnimation();
 								spinnerLayout.setVisibility(View.GONE);
 							}
-						}, 500);
-						
+						}, 500);	
 					}
 					
 				});
@@ -349,12 +279,147 @@ public class RemindersFragment extends ListFragment
 				remindersList.getViewTreeObserver().removeOnGlobalLayoutListener(this);
 			}
 			
+		});		
+	}
+	
+	private void LoadFromCache()
+	{
+		Thread loadFromCacheThread = new Thread(new Runnable()
+		{
+
+			@Override
+			public void run() {
+				String locationIconJson = GetStringFromFile(app.getCacheDir()+"/locationIconCache.json");
+				String remindersJson = GetStringFromFile(app.getCacheDir()+"/remindersCache.json");
+				ProcessLocationIconJson(locationIconJson);
+				ProcessRemindersJson(remindersJson);
+			}
+			
 		});
-		
-		
-		
-		
+		loadFromCacheThread.start();
+		try {
+			loadFromCacheThread.join();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 
+	private String GetStringFromFile(String filename)
+	{
+		String contents = null;
+		File file = new File(filename);
+		try {
+			FileInputStream inputStream = new FileInputStream(file);
+			byte[] fileBuffer = new byte[(int) file.length()];
+			inputStream.read(fileBuffer);
+			inputStream.close();
+			contents = new String(fileBuffer);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return contents;
+	}
+	
+	private void SaveStringToFile(String filename, String contents)
+	{
+		File outFile = new File(filename);
+		FileOutputStream outStream;
+		byte[] contentBytes = contents.getBytes();
+		try 
+		{
+			outStream = new FileOutputStream(outFile);
+			outStream.write(contentBytes);
+			outStream.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void ProcessLocationIconJson(String json)
+	{
+		//Parse the location icon references.
+		try
+		{
+			String iconAbsoluteUrl;
+			JSONObject mainJSONObject = new JSONObject(json);
+			JSONObject iconRefrenceObject = mainJSONObject.getJSONObject("icon-reference");
+			iconAbsoluteUrl = iconRefrenceObject.getString("absolute_url");
+			JSONArray locations = iconRefrenceObject.getJSONArray("locations");
+			int locationsLength = locations.length();
+
+			for(int i = 0; i < locationsLength; i++)
+			{
+				JSONObject location = locations.getJSONObject(i);
+				int id = location.getInt("id");
+				String path = location.getString("location_icon");
+
+				//Download icon and put it in a drawable
+				URL  imageUrl = new URL(baseUrl + iconAbsoluteUrl + path);
+				InputStream imageStream = (InputStream)imageUrl.getContent();
+				Drawable imageDrawable = Drawable.createFromStream(imageStream, ":)");
+				imageStream.close();
+				//Save image to cache
+				Bitmap bitmap = ((BitmapDrawable)(imageDrawable)).getBitmap();
+				File ourFile = new File(app.getCacheDir()+"/loc_img/"+path);
+				ourFile.getParentFile().mkdirs(); //Make our directories if they don't exist.
+				FileOutputStream outStream = new FileOutputStream(ourFile);
+				bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream);
+				outStream.close();
+				
+				app.icons.put(path, imageDrawable);
+				app.iconPaths.put(id, path);
+			}
+		} catch(JSONException e)
+		{
+			e.printStackTrace();
+		} catch(FileNotFoundException e)
+		{
+			e.printStackTrace();
+		} catch(IOException e)
+		{
+			e.printStackTrace();
+		}
+		
+		//Save location icon json in cache.
+		SaveStringToFile(app.getCacheDir()+"/locationIconCache.json", json);
+	}
+	
+	private void ProcessRemindersJson(String json)
+	{
+		//Now parse our events
+		try 
+		{
+			JSONObject eventsJSONObject = new JSONObject(json);
+			JSONObject calendarObject = eventsJSONObject.getJSONObject("calendar");
+			JSONArray  eventsArray =	calendarObject.getJSONArray("events");
+
+			app.reminders.clear();
+			int eventsLength = eventsArray.length();
+			for(int i = 0; i < eventsLength; i++)
+			{
+				JSONObject eventObject = eventsArray.getJSONObject(i);
+				HashMap<Integer,Object> event = new HashMap<Integer,Object>();
+				event.put(ReminderItemAdapter.PROPERTY_NAME, Html.fromHtml(eventObject.getString("title")).toString());
+				event.put(ReminderItemAdapter.PROPERTY_SUBTITLE, Html.fromHtml(eventObject.getString("subtitle")).toString());
+				event.put(ReminderItemAdapter.PROPERTY_DATE, Html.fromHtml(eventObject.getString("time_period")).toString());
+				int iconId = eventObject.getInt("location_id");
+				event.put(ReminderItemAdapter.PROPERTY_ICON, app.icons.get(app.iconPaths.get(iconId))); 
+				app.reminders.add(event);
+			}
+
+		}
+		catch (Exception e)
+		{
+			//TODO: Return parse error
+			e.printStackTrace();
+		}
+	
+		//Save reminders json file in cache
+		SaveStringToFile(app.getCacheDir()+"/remindersCache.json", json);
+	
+	}
 }

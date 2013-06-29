@@ -11,7 +11,7 @@ import android.view.Menu;
 
 public class MainActivity extends FragmentActivity
 {
-	//TabHost tabHost;
+	
 	ViewPager viewPager;
 	HashMap<String, TabInfo> tabInfoMap = new HashMap<String, TabInfo>();
 	

@@ -42,7 +42,7 @@ public class TimeManager {
 		return "";
 	}
 
-	public static String convertFromIsoFormat(String iso8601timeperiod) {
+	public static String convertFromServer(String rawStartDate, String rawEndDate) {
 
 		String[] months = {
 				"Jan",
@@ -65,8 +65,8 @@ public class TimeManager {
 		//Used for testing...
 		//String timeString = "2013-06-19T13:40:00/2013-06-19T15:03:00";
 
-		String rawStartDate = iso8601timeperiod.split("/")[0];
-		String rawEndDate = iso8601timeperiod.split("/")[1];
+		//String rawStartDate = iso8601timeperiod.split("/")[0];
+		//String rawEndDate = iso8601timeperiod.split("/")[1];		
 
 		String[] startDateTime = rawStartDate.split("T");
 

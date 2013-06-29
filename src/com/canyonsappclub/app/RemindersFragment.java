@@ -428,7 +428,10 @@ public class RemindersFragment extends ListFragment
 				HashMap<Integer,Object> event = new HashMap<Integer,Object>();
 				event.put(ReminderItemAdapter.PROPERTY_NAME, Html.fromHtml(fields.getString("event_title")).toString());
 				event.put(ReminderItemAdapter.PROPERTY_SUBTITLE, Html.fromHtml(fields.getString("event_subtitle")).toString());
-				event.put(ReminderItemAdapter.PROPERTY_DATE, Html.fromHtml(fields.getString("start_date")).toString());
+				String startDate = Html.fromHtml(fields.getString("start_date")).toString();
+				String endDate = Html.fromHtml(fields.getString("end_date")).toString();
+				String prettyTimePeriod = TimeManager.convertFromServer(startDate, endDate);
+				event.put(ReminderItemAdapter.PROPERTY_DATE, prettyTimePeriod);
 				int iconId = fields.getInt("location");
 				event.put(ReminderItemAdapter.PROPERTY_ICON, app.icons.get(app.iconPaths.get(iconId))); 
 				app.reminders.add(event);

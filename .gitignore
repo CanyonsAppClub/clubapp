@@ -1,4 +1,3 @@
-
 #binaries
 *.so
 *.o
@@ -18,6 +17,13 @@
 bin/
 gen/
 obj/
+
+#local configuration files
+local.properties
+
+#Eclipse Project files
+.classpath
+.project
 
 #android-studio
 .idea/
